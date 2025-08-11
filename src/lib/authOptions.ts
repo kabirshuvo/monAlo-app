@@ -1,9 +1,8 @@
 // /lib/authOptions.ts
-
-import { AuthOptions } from "next-auth";
+import type { AuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { compare } from "bcryptjs";
-import { User } from "@/models/User";
+import bcrypt from "bcryptjs";
+import { User } from "@/models/user";
 import { connectDB } from "@/lib/mongodb";
 
 export const authOptions: AuthOptions = {
@@ -15,46 +14,47 @@ export const authOptions: AuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
+        if (!credentials?.email || !credentials.password) {
+          throw new Error("Missing email or password");
+        }
+
         await connectDB();
 
-        const user = await User.findOne({ email: credentials?.email });
-        if (!user) throw new Error("❌ User not found");
+        const user = await User.findOne({ email: credentials.email });
+        if (!user) throw new Error("No user found");
 
-        const isValid = await compare(credentials!.password, user.password);
-        if (!isValid) throw new Error("❌ Invalid credentials");
+        const isValid = await bcrypt.compare(credentials.password, user.password);
+        if (!isValid) throw new Error("Invalid password");
 
         return {
           id: user._id.toString(),
           name: user.name,
           email: user.email,
-          role: user.role,
+          role: user.role, // গুরুত্বপূর্ণ: role JWT-তে যাবে
         };
       },
     }),
   ],
-
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.role = (user as any).role;
+        token.role = (user as any).role || "guest";
       }
       return token;
     },
     async session({ session, token }) {
-      if (session?.user && token.role) {
-        session.user.role = token.role as string; // TS fix
+      if (session.user) {
+        session.user.role = token.role as string;
       }
       return session;
     },
   },
-
   pages: {
-    signIn: "/auth/signin", // চাইলে তোমার custom sign-in পেজ
+    signIn: "/auth/signin",
+    error: "/auth/error",
   },
-
   session: {
     strategy: "jwt",
   },
-
   secret: process.env.NEXTAUTH_SECRET,
 };
