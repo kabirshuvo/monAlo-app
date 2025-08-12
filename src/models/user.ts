@@ -1,33 +1,16 @@
-// src/models/User.ts
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Schema, model, models } from "mongoose";
+import { IUser } from "@/types/user";
+//Cannot find module '@/types/user' or its corresponding type declarations.ts(2307)
 
-export interface IUser extends Document {
-  name: string;
-  email: string;
-  password: string;
-  role: "guest" | "customer" | "learner" | "admin";
-  createdAt: Date;
-}
-
-const UserSchema = new Schema<IUser>(
+const userSchema = new Schema<IUser>(
   {
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    role: {
-      type: String,
-      enum: ["guest", "customer", "learner", "admin"],
-      default: "guest",
-    },
-    createdAt: {
-      type: Date,
-      default: Date.now,
-    },
+    password: { type: String, select: false }, // Hide by default
+    role: { type: String, enum: ["admin", "learner", "customer"], default: "customer" },
+    provider: { type: String, enum: ["credentials", "google"], default: "credentials" },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
-export const User =
-  mongoose.models.User || mongoose.model<IUser>("User", UserSchema);
+export const User = models.User<IUser> || model<IUser>("User", userSchema);
