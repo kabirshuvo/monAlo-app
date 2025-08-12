@@ -1,46 +1,44 @@
+// src/app/api/users/signup/route.ts
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { connectToDatabase } from "@/lib/mongodb";
 import { User } from "@/models/user";
-import { IUser } from "@/types/user";
+import { IUser, IUserCreate } from "@/types/user";
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { name, email, password, provider } = body as {
-      name?: string;
-      email?: string;
-      password?: string;
-      provider?: "credentials" | "google";
-    };
+    const body: IUserCreate = await req.json();
 
-    if (!name || !email) {
-      return NextResponse.json({ error: "Name and email are required" }, { status: 400 });
+    const { name, email, password, role } = body;
+
+    if (!name || !email || !password) {
+      return NextResponse.json(
+        { message: "Name, email, and password are required" },
+        { status: 400 }
+      );
     }
 
     await connectToDatabase();
 
     // Check if user already exists
-    const existingUser = await User.findOne({ email }).lean<IUser | null>();
+    const existingUser = await User.findOne({ email }).lean<IUser>();
     if (existingUser) {
-      return NextResponse.json({ error: "Email is already registered" }, { status: 400 });
+      return NextResponse.json(
+        { message: "User already exists" },
+        { status: 400 }
+      );
     }
 
-    let hashedPassword: string | undefined;
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    if (provider === "credentials") {
-      if (!password) {
-        return NextResponse.json({ error: "Password is required for credentials signup" }, { status: 400 });
-      }
-      hashedPassword = await bcrypt.hash(password, 10);
-    }
-
-    const newUser = await User.create({
+    // Create user
+    const newUser = await User.create<IUser>({
       name,
       email,
-      password: hashedPassword || null,
-      provider: provider || "credentials",
-      role: "customer",
+      password: hashedPassword,
+      role: role || "customer",
+      provider: "credentials",
     });
 
     return NextResponse.json(
@@ -56,9 +54,11 @@ export async function POST(req: Request) {
       },
       { status: 201 }
     );
-
   } catch (error) {
     console.error("Signup error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { message: "Internal server error" },
+      { status: 500 }
+    );
   }
 }

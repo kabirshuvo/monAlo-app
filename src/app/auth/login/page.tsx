@@ -1,81 +1,100 @@
 "use client";
 
-import { signIn } from "next-auth/react";
 import { useState } from "react";
+import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   const router = useRouter();
+  const [form, setForm] = useState({ email: "", password: "" });
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    setLoading(true);
 
     const res = await signIn("credentials", {
       redirect: false,
-      email,
-      password,
+      email: form.email,
+      password: form.password,
     });
 
-    if (res?.error) {
-      setError(res.error);
-    } else {
+    setLoading(false);
+
+    if (res?.ok) {
       router.push("/");
+    } else {
+      alert(res?.error || "Login failed");
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100">
-      <div className="bg-white shadow-lg rounded-xl p-8 w-full max-w-md">
-        <h1 className="text-3xl font-bold text-center mb-6">Log In</h1>
+    <div className="bg-gray-100 min-h-screen flex items-center justify-center">
+      <div className="flex flex-col md:flex-row items-center justify-center w-full max-w-4xl p-4">
+        
+        {/* Left side - Intro text */}
+        <div className="flex-1 mb-6 md:mb-0 md:pr-8">
+          <h1 className="text-blue-600 text-5xl font-bold mb-3">Monalo</h1>
+          <p className="text-lg text-gray-700">
+            Connect and learn with people all around the world.
+          </p>
+        </div>
 
-        {error && (
-          <p className="bg-red-100 text-red-600 p-2 rounded mb-4">{error}</p>
-        )}
+        {/* Right side - Login form */}
+        <div className="flex-1 bg-white shadow-md rounded-lg p-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <input
+              type="email"
+              name="email"
+              placeholder="Email address"
+              value={form.email}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              required
+            />
+            <input
+              type="password"
+              name="password"
+              placeholder="Password"
+              value={form.password}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              required
+            />
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition"
+            >
+              {loading ? "Logging in..." : "Log In"}
+            </button>
+          </form>
 
-        <form onSubmit={handleLogin} className="space-y-4">
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full p-3 border rounded"
-            required
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full p-3 border rounded"
-            required
-          />
-          <button
-            type="submit"
-            className="w-full bg-blue-600 text-white p-3 rounded hover:bg-blue-700"
-          >
-            Log In
-          </button>
-        </form>
+          <div className="my-4 flex items-center">
+            <hr className="flex-1 border-gray-300" />
+            <span className="px-3 text-gray-500">or</span>
+            <hr className="flex-1 border-gray-300" />
+          </div>
 
-        <div className="mt-6 text-center">
-          <p className="text-gray-600">or</p>
           <button
             onClick={() => signIn("google")}
-            className="w-full bg-red-500 text-white p-3 rounded mt-3 hover:bg-red-600"
+            className="w-full bg-red-500 text-white py-2 rounded-lg font-semibold hover:bg-red-600 transition"
           >
             Continue with Google
           </button>
-        </div>
 
-        <div className="mt-6 text-center text-sm">
-          New here?{" "}
-          <a href="/auth/signup" className="text-blue-600 hover:underline">
-            Create an account
-          </a>
+          <div className="text-center mt-6">
+            <a
+              href="/auth/signup"
+              className="inline-block bg-green-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-600 transition"
+            >
+              Create new account
+            </a>
+          </div>
         </div>
       </div>
     </div>

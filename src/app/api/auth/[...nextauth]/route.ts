@@ -22,7 +22,7 @@ export const authOptions: AuthOptions = {
 
         await connectToDatabase();
 
-        // Explicitly set the lean type to IUser so _id, password, etc. are typed correctly
+        // Explicitly select password for comparison
         const user = await User.findOne({ email: credentials.email })
           .select("+password")
           .lean<IUser>();
@@ -41,7 +41,7 @@ export const authOptions: AuthOptions = {
         }
 
         return {
-          id: user._id.toString(), // ✅ Now string, no unknown type
+          id: user._id.toString(),
           name: user.name,
           email: user.email,
           role: user.role,
@@ -63,8 +63,8 @@ export const authOptions: AuthOptions = {
         const existingUser = await User.findOne({ email: user.email }).lean<IUser>();
         if (!existingUser) {
           await User.create({
-            name: user.name,
-            email: user.email,
+            name: user.name!,
+            email: user.email!,
             provider: "google",
             role: "customer",
           });
@@ -75,14 +75,16 @@ export const authOptions: AuthOptions = {
 
     async jwt({ token, user }) {
       if (user) {
-        token.role = (user as IUser).role || "customer";
+        token.id = user.id;
+        token.role = user.role;
       }
       return token;
     },
 
     async session({ session, token }) {
       if (session.user) {
-        (session.user as IUser).role = token.role as IUser["role"];
+        session.user.id = token.id;
+        session.user.role = token.role;
       }
       return session;
     },
