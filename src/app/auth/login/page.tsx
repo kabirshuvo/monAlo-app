@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { FcGoogle } from "react-icons/fc"; // Google Icon
 
 export default function LoginPage() {
   const router = useRouter();
@@ -80,11 +81,13 @@ export default function LoginPage() {
             <hr className="flex-1 border-gray-300" />
           </div>
 
+          {/* Google Login Button */}
           <button
             onClick={() => signIn("google")}
-            className="w-full bg-red-500 text-white py-2 rounded-lg font-semibold hover:bg-red-600 transition"
+            className="w-full flex items-center justify-center gap-3 bg-white border border-gray-300 py-2 rounded-lg font-medium hover:bg-gray-50 transition"
           >
-            Continue with Google
+            <FcGoogle size={22} />
+            <span>Continue with Google</span>
           </button>
 
           <div className="text-center mt-6">

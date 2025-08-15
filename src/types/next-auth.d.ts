@@ -1,28 +1,27 @@
-// src/types/next-auth.d.ts
 import NextAuth, { DefaultSession, DefaultUser } from "next-auth";
 import { JWT as DefaultJWT } from "next-auth/jwt";
-import { IUser } from "@/types/user";
+
+// এখানে Role টাইপ ডিফাইন করা হলো
+type UserRole = "admin" | "learner" | "customer";
 
 declare module "next-auth" {
   interface Session {
     user: {
-      id: string; 
-      name?: string | null;
-      email?: string | null;
-      role: IUser["role"]; 
+      id: string;
+      role: UserRole;
     } & DefaultSession["user"];
   }
 
   interface User extends DefaultUser {
     id: string;
-    role: IUser["role"];
+    role: UserRole;
   }
 }
 
 declare module "next-auth/jwt" {
   interface JWT extends DefaultJWT {
     id: string;
-    role: IUser["role"];
+    role: UserRole;
   }
 }
 
